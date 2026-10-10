@@ -67,4 +67,10 @@ tools/emu.sh click down > /dev/null
 expect_request 'POST /api/services/switch/toggle {"entity_id":"switch.fan"}'
 expect_screen four-values
 
+# A state too long for the watch is cut, not lost: sent whole, this one would
+# not fit the watch's inbox.
+set_state sensor.outside_temperature "$(printf 'Rain in the afternoon, then clear skies. %.0s' $(seq 13))"
+tools/emu.sh click down > /dev/null
+expect_screen long-value
+
 echo "ok - emulator"

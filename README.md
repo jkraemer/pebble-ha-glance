@@ -19,6 +19,9 @@ and the entities are compiled in, so everyone builds their own copy.
   with a short vibration, or red with a double vibration when the action
   failed or nothing answered within 15 seconds.
 - A value that could not be read shows as `?`.
+- Texts are cut to what the watch has room for: 27 bytes for a reading, 19
+  for a caption, 9 for a unit and 15 for a button label. Plain letters take
+  one byte each, accented ones two or more.
 - Values turn grey when the phone has not delivered fresh ones for more than
   75 seconds. Until the first ones arrive the screen says "Loading…", or
   "No phone" when the watch is not connected.
@@ -103,7 +106,9 @@ The watch side (`src/c`) only draws and reports button presses; the phone side
 Messages (keys in `package.json`): the watch sends `REFRESH` or `PRESS` with a
 button number, 0 at the top. The phone sends the dashboard as `VALUE_COUNT`,
 `CAPTION[i]`, `VALUE[i]`, `UNIT[i]` and `BUTTON[i]`, and the outcome of a press
-as `SUCCEEDED` or `FAILED` with the button number.
+as `SUCCEEDED` or `FAILED` with the button number. The phone cuts the texts to
+the room the watch keeps for them (`src/c/dashboard.h`), so that the dashboard
+always fits the watch's inbox.
 
 ### Text
 

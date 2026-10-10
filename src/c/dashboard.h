@@ -13,10 +13,18 @@ typedef enum {
   ButtonFailed,
 } ButtonState;
 
+// Room for each text, in bytes including the terminator. The phone cuts texts
+// to these sizes (src/pkjs/app.js), so that the dashboard message always fits
+// the watch's inbox.
+#define CAPTION_SIZE 20
+#define VALUE_SIZE 28
+#define UNIT_SIZE 10
+#define BUTTON_LABEL_SIZE 16
+
 typedef struct {
-  char caption[20];
-  char value[28];
-  char unit[10];
+  char caption[CAPTION_SIZE];
+  char value[VALUE_SIZE];
+  char unit[UNIT_SIZE];
 } Value;
 
 typedef struct {
@@ -26,6 +34,6 @@ typedef struct {
   bool stale;
   uint8_t value_count;
   Value values[LAYOUT_MAX_VALUES];
-  char button_labels[LAYOUT_BUTTONS][16];
+  char button_labels[LAYOUT_BUTTONS][BUTTON_LABEL_SIZE];
   ButtonState button_states[LAYOUT_BUTTONS];
 } Dashboard;

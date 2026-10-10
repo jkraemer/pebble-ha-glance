@@ -21,6 +21,14 @@
 #define SUCCESS_SHOWN_MS 2000
 #define FAILURE_SHOWN_MS 4000
 
+// The dashboard message at its largest: a dictionary header of one byte,
+// 7 bytes of header per tuple, the value count as int32, and the texts with
+// their terminators. The outbox only ever carries one int32.
+#define INBOX_SIZE (1 + 7 * (1 + 3 * LAYOUT_MAX_VALUES + LAYOUT_BUTTONS) + 4 \
+                    + LAYOUT_MAX_VALUES * (CAPTION_SIZE + VALUE_SIZE + UNIT_SIZE) \
+                    + LAYOUT_BUTTONS * BUTTON_LABEL_SIZE)
+#define OUTBOX_SIZE 64
+
 static Window *s_window;
 static Layer *s_layer;
 static FFont *s_font;
@@ -165,6 +173,11 @@ static void prv_inbox_received(DictionaryIterator *message, void *context) {
   prv_redraw();
 }
 
+static void prv_inbox_dropped(AppMessageResult reason, void *context) {
+  // Seen with `pebble logs` when the dashboard never arrives.
+  APP_LOG(APP_LOG_LEVEL_ERROR, "A message from the phone was dropped: %d", reason);
+}
+
 // Refreshing
 
 static void prv_refresh_timer_fired(void *data) {
@@ -229,9 +242,10 @@ int main(void) {
   window_stack_push(s_window, true);
 
   app_message_register_inbox_received(prv_inbox_received);
+  app_message_register_inbox_dropped(prv_inbox_dropped);
   app_message_register_outbox_sent(prv_outbox_sent);
   app_message_register_outbox_failed(prv_outbox_failed);
-  app_message_open(512, 64);
+  app_message_open(INBOX_SIZE, OUTBOX_SIZE);
   prv_refresh_timer_fired(NULL);
 
   app_event_loop();

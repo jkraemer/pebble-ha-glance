@@ -60,15 +60,18 @@ function network() {
 function pebble() {
   const listeners = {};
   const sent = [];
+  const failures = [];
   return {
     addEventListener(name, listener) { listeners[name] = listener; },
-    sendAppMessage(message) { sent.push({ ...message }); },
+    sendAppMessage(message, onSuccess, onFailure) { sent.push({ ...message }); failures.push(onFailure); },
     // Messages sent to the watch, oldest first.
     sent,
     // The app has started on the phone.
     ready() { listeners.ready({}); },
     // The watch sends a message.
     receive(payload) { listeners.appmessage({ payload }); },
+    // The watch does not take the last message sent.
+    refuse(error) { failures[failures.length - 1]({ transactionId: failures.length }, error); },
   };
 }
 

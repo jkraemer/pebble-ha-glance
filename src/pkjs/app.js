@@ -10,6 +10,38 @@ var BUTTONS = 3;
 // Shown for a value whose state could not be read.
 var UNREADABLE = '?';
 
+// Room the watch keeps for each text, in bytes of UTF-8 without the
+// terminator (src/c/dashboard.h). Texts are cut to it here, so that the
+// dashboard always fits the watch's inbox.
+var CAPTION_BYTES = 19;
+var VALUE_BYTES = 27;
+var UNIT_BYTES = 9;
+var BUTTON_BYTES = 15;
+
+// The longest start of a text that takes at most `bytes` of UTF-8, with no
+// character cut in half.
+function cut(text, bytes) {
+  var end = 0;
+  var used = 0;
+  while (end < text.length) {
+    var code = text.charCodeAt(end);
+    var next = text.charCodeAt(end + 1);
+    var units = 1;
+    var size = code < 0x80 ? 1 : code < 0x800 ? 2 : 3;
+    // A character beyond the basic plane is a pair of code units, four bytes.
+    if (code >= 0xD800 && code < 0xDC00 && next >= 0xDC00 && next < 0xE000) {
+      units = 2;
+      size = 4;
+    }
+    if (used + size > bytes) {
+      break;
+    }
+    used += size;
+    end += units;
+  }
+  return text.substring(0, end);
+}
+
 // Home Assistant needs a moment before a triggered action shows in the states.
 var REFRESH_AFTER_PRESS_MS = 1000;
 
@@ -29,18 +61,26 @@ function start(options) {
     return Object.prototype.hasOwnProperty.call(texts, state) ? texts[state] : state;
   }
 
+  // A failure is only logged, for `pebble logs`: there is nothing better to
+  // do with it. Runtimes differ in how they describe it.
+  function send(message) {
+    Pebble.sendAppMessage(message, function () {}, function (data, error) {
+      console.log('The watch did not take a message: ' + JSON.stringify(error || data));
+    });
+  }
+
   function sendDashboard(readings) {
     var message = {};
     message[keys.VALUE_COUNT] = values.length;
     values.forEach(function (value, i) {
-      message[keys.CAPTION + i] = value.label || '';
-      message[keys.VALUE + i] = readings[i] ? shown(value, readings[i].state) : UNREADABLE;
-      message[keys.UNIT + i] = readings[i] ? readings[i].unit : '';
+      message[keys.CAPTION + i] = cut(value.label || '', CAPTION_BYTES);
+      message[keys.VALUE + i] = cut(readings[i] ? shown(value, readings[i].state) : UNREADABLE, VALUE_BYTES);
+      message[keys.UNIT + i] = cut(readings[i] ? readings[i].unit : '', UNIT_BYTES);
     });
     for (var i = 0; i < BUTTONS; i++) {
-      message[keys.BUTTON + i] = (buttons[i] && buttons[i].label) || '';
+      message[keys.BUTTON + i] = cut((buttons[i] && buttons[i].label) || '', BUTTON_BYTES);
     }
-    Pebble.sendAppMessage(message);
+    send(message);
   }
 
   // Reads all values and sends the dashboard once the last one has answered.
@@ -64,7 +104,7 @@ function start(options) {
   function report(key, button) {
     var message = {};
     message[key] = button;
-    Pebble.sendAppMessage(message);
+    send(message);
   }
 
   function press(button) {

@@ -133,6 +133,72 @@ test('a value without a label has an empty caption', () => {
   assert.equal(watch.sent[0][KEYS.CAPTION], '');
 });
 
+test('a long value is cut to what the watch has room for', () => {
+  const { net, watch } = start({ ...CONFIG, values: [{ entity: 'sensor.forecast' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.forecast').respond(200, { state: 'Rain in the afternoon, then clear skies', attributes: {} });
+
+  assert.equal(watch.sent[0][KEYS.VALUE], 'Rain in the afternoon, then');
+});
+
+test('a long caption is cut as well', () => {
+  const { net, watch } = start({ ...CONFIG, values: [{ label: 'Temperature outside now', entity: 'sensor.outside' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.outside').respond(200, { state: '31.4', attributes: {} });
+
+  assert.equal(watch.sent[0][KEYS.CAPTION], 'Temperature outside');
+});
+
+test('a long unit is cut as well', () => {
+  const { net, watch } = start({ ...CONFIG, values: [{ entity: 'sensor.outside' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.outside').respond(200, { state: '31.4', attributes: { unit_of_measurement: 'degrees Celsius' } });
+
+  assert.equal(watch.sent[0][KEYS.UNIT], 'degrees C');
+});
+
+test('a long button label is cut as well', () => {
+  const { watch } = start({ ...CONFIG, values: [], buttons: [{ label: 'Back door lights on', entity: 'switch.back' }] });
+  watch.ready();
+
+  assert.equal(watch.sent[0][KEYS.BUTTON], 'Back door light');
+});
+
+test('texts are cut by their bytes, not their characters', () => {
+  // Ten euro signs take 30 bytes; nine fit into the 27 of a value.
+  const { net, watch } = start({ ...CONFIG, values: [{ entity: 'sensor.a' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.a').respond(200, { state: '€€€€€€€€€€', attributes: {} });
+
+  assert.equal(watch.sent[0][KEYS.VALUE], '€€€€€€€€€');
+});
+
+test('a cut never leaves half a character', () => {
+  // 26 letters leave one byte, which is not enough for the degree sign's two.
+  const { net, watch } = start({ ...CONFIG, values: [{ entity: 'sensor.a' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.a').respond(200, { state: 'abcdefghijklmnopqrstuvwxyz°', attributes: {} });
+
+  assert.equal(watch.sent[0][KEYS.VALUE], 'abcdefghijklmnopqrstuvwxyz');
+});
+
+test('a character of two code units is kept or dropped as a whole', () => {
+  // 23 letters and a four-byte character fill 27 bytes; with one letter more the character has to go.
+  const { net, watch } = start({ ...CONFIG, values: [{ entity: 'sensor.a' }, { entity: 'sensor.b' }] });
+  watch.ready();
+
+  net.take('/api/states/sensor.a').respond(200, { state: 'abcdefghijklmnopqrstuvw😀', attributes: {} });
+  net.take('/api/states/sensor.b').respond(200, { state: 'abcdefghijklmnopqrstuvwx😀', attributes: {} });
+
+  assert.equal(watch.sent[0][KEYS.VALUE], 'abcdefghijklmnopqrstuvw😀');
+  assert.equal(watch.sent[0][KEYS.VALUE + 1], 'abcdefghijklmnopqrstuvwx');
+});
+
 test('pressing a button triggers its entity and reports success', () => {
   const { net, watch } = start();
 
@@ -202,4 +268,19 @@ test('buttons that are not configured have empty labels', () => {
     [KEYS.VALUE_COUNT]: 0,
     [KEYS.BUTTON]: 'Movie', [KEYS.BUTTON + 1]: '', [KEYS.BUTTON + 2]: '',
   }]);
+});
+
+test('a message the watch did not take is logged', () => {
+  const { watch } = start({ ...CONFIG, values: [] });
+  const lines = [];
+  const log = console.log;
+  console.log = (line) => lines.push(line);
+  try {
+    watch.ready();
+    watch.refuse('inbox full');
+  } finally {
+    console.log = log;
+  }
+
+  assert.deepEqual(lines, ['The watch did not take a message: "inbox full"']);
 });
