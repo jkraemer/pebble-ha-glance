@@ -32,11 +32,13 @@ entities and toggles everything else.
 ## Configure
 
 Copy `settings.example.json` to `settings.json`, which git ignores, and adjust
-it. It holds the Home Assistant address, the values (at most four) and the
-three buttons, top to bottom:
+it. It holds the Home Assistant address, a long-lived access token (created in
+Home Assistant under your profile, Security tab), the values (at most four)
+and the three buttons, top to bottom:
 
     {
       "url": "https://ha.example.org",
+      "token": "...",
       "values": [{ "label": "Battery", "entity": "sensor.battery" }],
       "buttons": [{ "label": "Movie", "entity": "script.movie_night" }]
     }
@@ -50,14 +52,10 @@ list are shown as they are:
     { "label": "Alarm", "entity": "alarm_control_panel.home",
       "shown_as": { "disarmed": "OFF", "armed_away": "AWAY" } }
 
-The access token is not kept in git. Create a long-lived access token in Home
-Assistant (profile, Security tab) and put it in a file named `ha-token` in
-this directory:
-
-    echo '<token>' > ha-token
-
-Both are built into the app, so **the built package is a credential**: anyone
-holding the `.pbw` can use Home Assistant as you. Keep it off shared storage.
+The settings are built into the app, so **`settings.json` and the built
+package are credentials**: anyone holding either can use Home Assistant as
+you. Keep the `.pbw` off shared storage, and take the token out before showing
+your settings to anyone.
 
 ## Build and install
 

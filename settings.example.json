@@ -1,5 +1,6 @@
 {
   "url": "https://homeassistant.example.org",
+  "token": "",
   "values": [
     {
       "label": "Alarm",

@@ -27,21 +27,16 @@ def configure(ctx):
 
 def write_config(ctx):
     """
-    Writes the configuration the phone side is built with: the settings plus the Home Assistant
-    access token. Both are personal and kept out of git, in settings.json and ha-token.
-    GLANCE_SETTINGS names another settings file, such as dev/settings.json, which brings a token
-    of its own.
+    Writes the configuration the phone side is built with from settings.json, which is personal
+    and kept out of git. GLANCE_SETTINGS names another settings file, such as dev/settings.json.
     """
     settings_path = os.environ.get('GLANCE_SETTINGS', 'settings.json')
     settings = ctx.path.find_node(settings_path)
     if settings is None:
         ctx.fatal('{} is missing: copy settings.example.json to it and adjust it'.format(settings_path))
     config = json.loads(settings.read())
-    if 'token' not in config:
-        token = ctx.path.find_node('ha-token')
-        if token is None or not token.read().strip():
-            ctx.fatal('ha-token is missing: put a Home Assistant long-lived access token into that file')
-        config['token'] = token.read().strip()
+    if not config.get('token'):
+        ctx.fatal('{} has no token: put a Home Assistant long-lived access token into it'.format(settings_path))
     ctx.path.make_node('src/pkjs/config.json').write(json.dumps(config, indent=2))
 
 

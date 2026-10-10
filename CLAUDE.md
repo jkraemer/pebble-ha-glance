@@ -9,7 +9,7 @@ file layout and the message protocol.
 ```bash
 make test            # host tests (C via cc, JavaScript via node --test)
 make test-emulator   # end-to-end in the headless emulator against tools/fake_ha.js
-pebble build         # the real build, needs ha-token; output build/pebble-ha-glance.pbw
+pebble build         # the real build, needs settings.json; output build/pebble-ha-glance.pbw
 tools/emu.sh         # drive the emulator: install, click, send, shot, kill
 make font            # regenerate resources/fonts/text.ffont
 ```
@@ -25,8 +25,8 @@ After changing `messageKeys` or resources in `package.json`, run
   it instead of `pebble install --emulator`.
 - The emulator must run headless: every `pebble` command that touches it
   needs `--emulator emery --vnc` (`tools/emu.sh` adds this).
-- `settings.json`, `ha-token` and `src/pkjs/config.json` are personal (address,
-  entities, access token) and ignored by git. Do not print or commit them;
+- `settings.json` and `src/pkjs/config.json` are personal (address, access
+  token, entities) and ignored by git. Do not print or commit them;
   `settings.example.json` is the tracked template.
 - Code that needs no watch API (`layout`, `ink`, `fit`, `text`) is developed
   test-first with the host tests in `test/c`. `main.c` and `draw.c` are covered

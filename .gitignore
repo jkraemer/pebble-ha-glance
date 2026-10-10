@@ -1,7 +1,6 @@
 build/
 node_modules/
 .lock-waf*
-ha-token
 settings.json
 src/pkjs/config.json
 __pycache__/
