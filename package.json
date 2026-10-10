@@ -1,0 +1,43 @@
+{
+  "name": "pebble-ha-glance",
+  "author": "Jens Kraemer",
+  "license": "GPL-3.0-or-later",
+  "version": "1.0.0",
+  "keywords": [
+    "pebble-app"
+  ],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "HA Glance",
+    "uuid": "bef22777-12bf-4e17-a2ab-2d165411c1fc",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "emery"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "REFRESH",
+      "PRESS",
+      "VALUE_COUNT",
+      "CAPTION[4]",
+      "VALUE[4]",
+      "UNIT[4]",
+      "BUTTON[3]",
+      "SUCCEEDED",
+      "FAILED"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "raw",
+          "name": "FONT_TEXT",
+          "file": "fonts/text.ffont"
+        }
+      ]
+    }
+  }
+}
