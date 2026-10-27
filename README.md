@@ -4,8 +4,8 @@ A Home Assistant dashboard for the Pebble Time 2: up to four values, each drawn
 as large as its share of the screen allows, and three buttons that trigger
 Home Assistant entities.
 
-There is no settings screen yet. The Home Assistant address, the access token
-and the entities are compiled in, so everyone builds their own copy.
+The Home Assistant address, the access token and the entities are set on the
+phone, in the app's settings in the Pebble app.
 
 ![Two values](docs/screens/two-values.png) ![Four values](docs/screens/four-values.png)
 
@@ -24,7 +24,8 @@ and the entities are compiled in, so everyone builds their own copy.
   one byte each, accented ones two or more.
 - Values turn grey when the phone has not delivered fresh ones for more than
   75 seconds. Until the first ones arrive the screen says "Loading…", or
-  "No phone" when the watch is not connected.
+  "No phone" when the watch is not connected, or "Set up on phone" while the
+  settings lack the address or the token.
 
 Values are read when the app opens, every 30 seconds while it is open, and one
 second after a button did its work.
@@ -34,31 +35,21 @@ entities and toggles everything else.
 
 ## Configure
 
-Copy `settings.example.json` to `settings.json`, which git ignores, and adjust
-it. It holds the Home Assistant address, a long-lived access token (created in
-Home Assistant under your profile, Security tab), the values (at most four)
-and the three buttons, top to bottom:
+Open the app's settings in the Pebble app. They ask for the Home Assistant
+address, a long-lived access token (created in Home Assistant under your
+profile, Security tab), up to four values and the three buttons, top to
+bottom. A value or button is used when it names an entity.
 
-    {
-      "url": "https://ha.example.org",
-      "token": "...",
-      "values": [{ "label": "Battery", "entity": "sensor.battery" }],
-      "buttons": [{ "label": "Movie", "entity": "script.movie_night" }]
-    }
+A value's caption may be left empty; its reading then takes the whole row.
 
-A value's `label` may be left out; its reading then takes the whole row.
+A value can give states a text of their own, written as `state=text` pairs
+separated by commas. Short texts are drawn larger, which is what alarm states
+are good for; states it does not list are shown as they are:
 
-A value can give states a text of their own with `shown_as`. Short texts are
-drawn larger, which is what the alarm states use it for; states it does not
-list are shown as they are:
+    disarmed=OFF, armed_away=AWAY, armed_night=NIGHT
 
-    { "label": "Alarm", "entity": "alarm_control_panel.home",
-      "shown_as": { "disarmed": "OFF", "armed_away": "AWAY" } }
-
-The settings are built into the app, so **`settings.json` and the built
-package are credentials**: anyone holding either can use Home Assistant as
-you. Keep the `.pbw` off shared storage, and take the token out before showing
-your settings to anyone.
+The settings, token included, are kept on the phone only. They are not part
+of the app package.
 
 ## Build and install
 
@@ -69,6 +60,11 @@ Needs the Pebble SDK: `uv tool install pebble-tool --python 3.13`, then
 
 Open `build/pebble-ha-glance.pbw` on the phone with the Pebble app to
 sideload it.
+
+A build can start out with settings of its own, used until settings are
+saved on the phone: `GLANCE_SETTINGS=dev/settings.json pebble build` takes
+them from that file (see `dev/settings.json` for the format). They are then
+part of the package, token included, so keep such a build to yourself.
 
 ## Test
 
@@ -81,7 +77,7 @@ headless Pebble Time 2 emulator against a stand-in Home Assistant
 `test/screens`.
 
 `tools/emu.sh` drives the emulator by hand: install, press buttons, send
-messages, take screenshots. It always builds with `dev/settings.json`, which
+messages, take screenshots. It builds with `dev/settings.json`, which
 points at the stand-in, so that buttons pressed in the emulator never reach
 the house, and it removes that build afterwards so that it is not sideloaded
 by mistake. Run `pebble build` again before installing on the watch.
@@ -101,12 +97,14 @@ The watch side (`src/c`) only draws and reports button presses; the phone side
 | `src/c/text.c` | Copies UTF-8 text into fixed buffers |
 | `src/pkjs/app.js` | Sends the dashboard, triggers buttons |
 | `src/pkjs/home_assistant.js` | Home Assistant REST calls |
-| `src/pkjs/index.js` | Entry point; `config.json` next to it is written by the build |
+| `src/pkjs/settings.js` | The settings page, and keeping its settings on the phone |
+| `src/pkjs/index.js` | Entry point; `preset.json` next to it is written by the build |
 
 Messages (keys in `package.json`): the watch sends `REFRESH` or `PRESS` with a
 button number, 0 at the top. The phone sends the dashboard as `VALUE_COUNT`,
 `CAPTION[i]`, `VALUE[i]`, `UNIT[i]` and `BUTTON[i]`, and the outcome of a press
-as `SUCCEEDED` or `FAILED` with the button number. The phone cuts the texts to
+as `SUCCEEDED` or `FAILED` with the button number. Without usable settings it
+answers `REFRESH` with `SETUP_NEEDED`. The phone cuts the texts to
 the room the watch keeps for them (`src/c/dashboard.h`), so that the dashboard
 always fits the watch's inbox.
 
@@ -139,8 +137,10 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
 A PARTICULAR PURPOSE. See `LICENSE` for the full text.
 
 Included work of others keeps its own licence: pebble-fctx and pebble-utf8 by
-JR Mobley under the MIT licence (`src/c/vendor/*/LICENSE`), and the font
-outlines under the SIL Open Font License (`resources/fonts/OFL.txt`).
+JR Mobley under the MIT licence (`src/c/vendor/*/LICENSE`), Clay, which makes
+the settings page and is bundled into the phone-side script, under the MIT
+licence, and the font outlines under the SIL Open Font License
+(`resources/fonts/OFL.txt`).
 
 The screen with readouts on the left and three buttons on the right follows
 the idea of the app "home assistant pebble" by Joshua Galea; no code or

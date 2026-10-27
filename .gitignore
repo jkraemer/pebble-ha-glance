@@ -2,6 +2,6 @@ build/
 node_modules/
 .lock-waf*
 settings.json
-src/pkjs/config.json
+src/pkjs/preset.json
 __pycache__/
 test/screens/*.actual.png

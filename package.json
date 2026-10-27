@@ -18,6 +18,9 @@
     "targetPlatforms": [
       "emery"
     ],
+    "capabilities": [
+      "configurable"
+    ],
     "watchapp": {
       "watchface": false
     },
@@ -30,7 +33,8 @@
       "UNIT[4]",
       "BUTTON[3]",
       "SUCCEEDED",
-      "FAILED"
+      "FAILED",
+      "SETUP_NEEDED"
     ],
     "resources": {
       "media": [

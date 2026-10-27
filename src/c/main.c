@@ -34,6 +34,8 @@ static Layer *s_layer;
 static FFont *s_font;
 static Dashboard s_dashboard;
 static time_t s_loaded_at;
+// The phone has no settings to fetch a dashboard with.
+static bool s_setup_needed;
 static AppTimer *s_button_timers[LAYOUT_BUTTONS];
 
 // Messages waiting to go to the phone, which takes one at a time.
@@ -155,12 +157,19 @@ static void prv_load_dashboard(DictionaryIterator *message, int32_t value_count)
   s_dashboard.loaded = true;
   s_dashboard.stale = false;
   s_loaded_at = time(NULL);
+  s_setup_needed = false;
 }
 
 static void prv_inbox_received(DictionaryIterator *message, void *context) {
   Tuple *value_count = dict_find(message, MESSAGE_KEY_VALUE_COUNT);
   if (value_count) {
     prv_load_dashboard(message, value_count->value->int32);
+  }
+  if (dict_find(message, MESSAGE_KEY_SETUP_NEEDED)) {
+    s_setup_needed = true;
+    s_dashboard.loaded = false;
+    // Without settings the buttons do nothing.
+    memset(s_dashboard.button_labels, 0, sizeof(s_dashboard.button_labels));
   }
   Tuple *succeeded = dict_find(message, MESSAGE_KEY_SUCCEEDED);
   if (succeeded) {
@@ -185,7 +194,8 @@ static void prv_refresh_timer_fired(void *data) {
   s_refresh_wanted = true;
   prv_send_next();
   prv_redraw();
-  app_timer_register(s_dashboard.loaded ? REFRESH_INTERVAL_MS : FIRST_ANSWER_RETRY_MS, prv_refresh_timer_fired, NULL);
+  bool answered = s_dashboard.loaded || s_setup_needed;
+  app_timer_register(answered ? REFRESH_INTERVAL_MS : FIRST_ANSWER_RETRY_MS, prv_refresh_timer_fired, NULL);
 }
 
 // Input and screen
@@ -215,7 +225,9 @@ static void prv_click_config_provider(void *context) {
 }
 
 static void prv_draw(Layer *layer, GContext *ctx) {
-  const char *notice = connection_service_peek_pebble_app_connection() ? "Loading…" : "No phone";
+  const char *notice = !connection_service_peek_pebble_app_connection() ? "No phone"
+                       : s_setup_needed ? "Set up on phone"
+                       : "Loading…";
   draw_dashboard(ctx, layer_get_bounds(layer), s_font, &s_dashboard, notice);
 }
 

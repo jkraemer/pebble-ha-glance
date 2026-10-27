@@ -6,7 +6,7 @@
 // Pebble SDK at build time; array keys take as many numbers as they have entries.
 const KEYS = {
   CAPTION: 100, VALUE: 104, UNIT: 108, BUTTON: 112,
-  REFRESH: 115, PRESS: 116, VALUE_COUNT: 117, SUCCEEDED: 118, FAILED: 119,
+  REFRESH: 115, PRESS: 116, VALUE_COUNT: 117, SUCCEEDED: 118, FAILED: 119, SETUP_NEEDED: 120,
 };
 
 const CONFIG = {

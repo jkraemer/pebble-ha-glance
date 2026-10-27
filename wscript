@@ -25,25 +25,26 @@ def configure(ctx):
     ctx.load('pebble_sdk')
 
 
-def write_config(ctx):
+def write_preset(ctx):
     """
-    Writes the configuration the phone side is built with from settings.json, which is personal
-    and kept out of git. GLANCE_SETTINGS names another settings file, such as dev/settings.json.
+    Writes the settings the phone side starts with until settings are saved on the phone. Only a
+    development build has them: GLANCE_SETTINGS names its settings file, such as dev/settings.json.
+    Any other build gets none, so that no address or token ends up in the package.
     """
-    settings_path = os.environ.get('GLANCE_SETTINGS', 'settings.json')
-    settings = ctx.path.find_node(settings_path)
-    if settings is None:
-        ctx.fatal('{} is missing: copy settings.example.json to it and adjust it'.format(settings_path))
-    config = json.loads(settings.read())
-    if not config.get('token'):
-        ctx.fatal('{} has no token: put a Home Assistant long-lived access token into it'.format(settings_path))
-    ctx.path.make_node('src/pkjs/config.json').write(json.dumps(config, indent=2))
+    preset = None
+    settings_path = os.environ.get('GLANCE_SETTINGS')
+    if settings_path:
+        settings = ctx.path.find_node(settings_path)
+        if settings is None:
+            ctx.fatal('{} is missing'.format(settings_path))
+        preset = json.loads(settings.read())
+    ctx.path.make_node('src/pkjs/preset.json').write(json.dumps(preset, indent=2))
 
 
 def build(ctx):
     ctx.load('pebble_sdk')
     if ctx.cmd == 'build':
-        write_config(ctx)
+        write_preset(ctx)
 
     build_worker = os.path.exists('worker_src')
     binaries = []

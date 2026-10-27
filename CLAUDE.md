@@ -9,7 +9,7 @@ file layout and the message protocol.
 ```bash
 make test            # host tests (C via cc, JavaScript via node --test)
 make test-emulator   # end-to-end in the headless emulator against tools/fake_ha.js
-pebble build         # the real build, needs settings.json; output build/pebble-ha-glance.pbw
+pebble build         # the real build, without settings; output build/pebble-ha-glance.pbw
 tools/emu.sh         # drive the emulator: install, click, send, shot, kill
 make font            # regenerate resources/fonts/text.ffont
 ```
@@ -19,15 +19,17 @@ After changing `messageKeys` or resources in `package.json`, run
 
 ## Rules
 
-- **Never install a build made with `settings.json` into the emulator.** The
+- **Never install a build with real settings into the emulator.** The
   phone-side script runs there too, and pressed buttons would act on the real
-  house. `tools/emu.sh install` builds with `dev/settings.json` itself; use
-  it instead of `pebble install --emulator`.
+  house. `tools/emu.sh install` builds with `dev/settings.json` itself, and
+  `tools/emu.sh install-unconfigured` without settings; use them instead of
+  `pebble install --emulator`.
 - The emulator must run headless: every `pebble` command that touches it
   needs `--emulator emery --vnc` (`tools/emu.sh` adds this).
-- `settings.json` and `src/pkjs/config.json` are personal (address, access
-  token, entities) and ignored by git. Do not print or commit them;
-  `settings.example.json` is the tracked template.
+- Settings are entered on the phone (`src/pkjs/settings.js`), never built
+  in. Only `GLANCE_SETTINGS=<file> pebble build` writes a preset into
+  `src/pkjs/preset.json`, which git ignores. A `settings.json` with a real
+  token may still lie around: do not print or commit it.
 - Code that needs no watch API (`layout`, `ink`, `fit`, `text`) is developed
   test-first with the host tests in `test/c`. `main.c` and `draw.c` are covered
   by the emulator test; after changing what the screen looks like, check

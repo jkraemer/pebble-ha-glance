@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # End-to-end check in the Pebble Time 2 emulator: the real watch binary and
-# phone-side script, built with dev/settings.json, against the stand-in Home
-# Assistant. What the screen shows is compared with the pictures in
-# test/screens; a screen that differs is saved next to them as NAME.actual.png.
+# phone-side script, first without settings as it comes from the appstore,
+# then built with dev/settings.json, against the stand-in Home Assistant. What
+# the screen shows is compared with the pictures in test/screens; a screen
+# that differs is saved next to them as NAME.actual.png.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -46,6 +47,13 @@ set_state() {
   curl -sf -X POST "http://127.0.0.1:8377/api/states/$1" \
     -H 'Authorization: Bearer dev-token' -d "{\"state\": \"$2\"}" > /dev/null
 }
+
+# Without settings the watch asks for them, and buttons do nothing.
+tools/emu.sh install-unconfigured > /dev/null || fail "the app could not be built and installed"
+expect_screen setup-needed
+tools/emu.sh click up > /dev/null
+expect_screen setup-needed-press-failed
+! grep -q /api/ "$requests" || fail "Home Assistant was asked without settings: $(grep /api/ "$requests")"
 
 tools/emu.sh install > /dev/null || fail "the app could not be built and installed"
 

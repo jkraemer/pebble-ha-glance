@@ -6,8 +6,8 @@ const app = require('../../src/pkjs/app');
 
 function start(config) {
   const world = { net: network(), watch: pebble(), time: clock() };
-  app.start({
-    config: config || CONFIG,
+  world.app = app.start({
+    config: config === undefined ? CONFIG : config,
     keys: KEYS,
     Pebble: world.watch,
     XMLHttpRequest: world.net.XMLHttpRequest,
@@ -283,4 +283,68 @@ test('a message the watch did not take is logged', () => {
   }
 
   assert.deepEqual(lines, ['The watch did not take a message: "inbox full"']);
+});
+
+test('without settings the watch is told to get them set up', () => {
+  const { net, watch } = start(null);
+  watch.ready();
+
+  assert.deepEqual(watch.sent, [{ [KEYS.SETUP_NEEDED]: 1 }]);
+  assert.equal(net.requests.length, 0);
+});
+
+test('settings without an address or a token count as none', () => {
+  [{ ...CONFIG, url: '' }, { ...CONFIG, token: '' }].forEach((config) => {
+    const { net, watch } = start(config);
+    watch.ready();
+
+    assert.deepEqual(watch.sent, [{ [KEYS.SETUP_NEEDED]: 1 }]);
+    assert.equal(net.requests.length, 0);
+  });
+});
+
+test('without settings the watch is told so whenever it asks', () => {
+  const { watch } = start(null);
+  watch.ready();
+
+  watch.receive({ REFRESH: 1 });
+
+  assert.deepEqual(watch.sent, [{ [KEYS.SETUP_NEEDED]: 1 }, { [KEYS.SETUP_NEEDED]: 1 }]);
+});
+
+test('without settings a press reports failure', () => {
+  const { net, watch } = start(null);
+
+  watch.receive({ PRESS: 0 });
+
+  assert.deepEqual(watch.sent, [{ [KEYS.FAILED]: 0 }]);
+  assert.equal(net.requests.length, 0);
+});
+
+test('new settings are used at once', () => {
+  const { app: running, net, watch } = start(null);
+  watch.ready();
+
+  running.configure({ ...CONFIG, url: 'https://other.example', values: [{ label: 'Solar', entity: 'sensor.solar' }] });
+  const request = net.take('/api/states/sensor.solar');
+  request.respond(200, { state: '2.4', attributes: { unit_of_measurement: 'kW' } });
+
+  assert.equal(request.url, 'https://other.example/api/states/sensor.solar');
+  assert.equal(watch.sent.length, 2);
+  assert.equal(watch.sent[1][KEYS.VALUE_COUNT], 1);
+  assert.equal(watch.sent[1][KEYS.CAPTION], 'Solar');
+  assert.equal(watch.sent[1][KEYS.VALUE], '2.4');
+});
+
+test('values read under old settings are not shown under new ones', () => {
+  const { app: running, net, watch } = start();
+  watch.ready();
+
+  running.configure({ ...CONFIG, values: [{ label: 'Solar', entity: 'sensor.solar' }] });
+  answerStates(net, 'disarmed', '96');
+  net.take('/api/states/sensor.solar').respond(200, { state: '2.4', attributes: {} });
+
+  assert.deepEqual(watch.sent.map((message) => message[KEYS.CAPTION]), ['Alarm', 'Solar']);
+  assert.equal(watch.sent[0][KEYS.CAPTION + 1], 'Battery');
+  assert.equal(watch.sent[1][KEYS.VALUE_COUNT], 1);
 });

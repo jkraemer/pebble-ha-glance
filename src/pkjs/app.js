@@ -45,15 +45,23 @@ function cut(text, bytes) {
 // Home Assistant needs a moment before a triggered action shows in the states.
 var REFRESH_AFTER_PRESS_MS = 1000;
 
-// options: config (see settings.json, plus the token), keys (the numbers of
-// the message keys), and the runtime's Pebble, XMLHttpRequest and setTimeout.
+// options: config (see settings.js; null when there is none), keys (the
+// numbers of the message keys), and the runtime's Pebble, XMLHttpRequest and
+// setTimeout. Returns configure(config), which puts other settings to use.
 function start(options) {
-  var config = options.config;
   var keys = options.keys;
   var Pebble = options.Pebble;
-  var home = homeAssistant.connect(config.url, config.token, options.XMLHttpRequest);
-  var values = (config.values || []).slice(0, MAX_VALUES);
-  var buttons = config.buttons || [];
+  // Without an address and a token there is no Home Assistant to talk to.
+  var home = null;
+  var values = [];
+  var buttons = [];
+
+  function configure(config) {
+    var usable = config && config.url && config.token;
+    home = usable ? homeAssistant.connect(config.url, config.token, options.XMLHttpRequest) : null;
+    values = usable ? (config.values || []).slice(0, MAX_VALUES) : [];
+    buttons = usable ? config.buttons || [] : [];
+  }
 
   // The text for a state: the one the value's shown_as gives it, or the state itself.
   function shown(value, state) {
@@ -69,10 +77,10 @@ function start(options) {
     });
   }
 
-  function sendDashboard(readings) {
+  function sendDashboard(shownValues, readings) {
     var message = {};
-    message[keys.VALUE_COUNT] = values.length;
-    values.forEach(function (value, i) {
+    message[keys.VALUE_COUNT] = shownValues.length;
+    shownValues.forEach(function (value, i) {
       message[keys.CAPTION + i] = cut(value.label || '', CAPTION_BYTES);
       message[keys.VALUE + i] = cut(readings[i] ? shown(value, readings[i].state) : UNREADABLE, VALUE_BYTES);
       message[keys.UNIT + i] = cut(readings[i] ? readings[i].unit : '', UNIT_BYTES);
@@ -84,26 +92,33 @@ function start(options) {
   }
 
   // Reads all values and sends the dashboard once the last one has answered.
+  // Readings are shown with the values they were asked for, even when the
+  // settings change meanwhile.
   function refresh() {
-    var readings = [];
-    var waiting = values.length;
-    if (waiting === 0) {
-      sendDashboard(readings);
+    if (!home) {
+      report(keys.SETUP_NEEDED, 1);
+      return;
     }
-    values.forEach(function (value, i) {
+    var asked = values;
+    var readings = [];
+    var waiting = asked.length;
+    if (waiting === 0) {
+      sendDashboard(asked, readings);
+    }
+    asked.forEach(function (value, i) {
       home.read(value.entity, function (error, reading) {
         readings[i] = error ? null : reading;
         waiting--;
         if (waiting === 0) {
-          sendDashboard(readings);
+          sendDashboard(asked, readings);
         }
       });
     });
   }
 
-  function report(key, button) {
+  function report(key, number) {
     var message = {};
-    message[key] = button;
+    message[key] = number;
     send(message);
   }
 
@@ -136,6 +151,14 @@ function start(options) {
       refresh();
     }
   });
+
+  configure(options.config);
+  return {
+    configure: function (config) {
+      configure(config);
+      refresh();
+    }
+  };
 }
 
 module.exports = { start: start };
