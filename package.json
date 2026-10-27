@@ -7,7 +7,9 @@
     "pebble-app"
   ],
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "@rebble/clay": "^1.1.0"
+  },
   "pebble": {
     "displayName": "HA Glance",
     "uuid": "bef22777-12bf-4e17-a2ab-2d165411c1fc",
