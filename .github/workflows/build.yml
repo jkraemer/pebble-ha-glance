@@ -12,13 +12,17 @@ jobs:
     # The emulator needs glibc 2.38 or newer.
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@v10
+        with:
+          # Only the pebble tool is installed with uv: there are no Python
+          # dependencies to cache.
+          enable-cache: false
 
       # What the Pebble SDK and its emulator need, as the SDK documentation lists it.
       - name: Install system libraries
@@ -38,7 +42,7 @@ jobs:
       - name: Build
         run: pebble build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: pebble-ha-glance.pbw
           # The package is named after the checkout's directory.
