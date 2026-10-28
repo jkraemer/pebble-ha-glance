@@ -1,0 +1,17 @@
+Your Home Assistant at a glance, and three of its actions under your thumb.
+
+HA Glance shows up to four values from Home Assistant: temperatures, battery levels, power, the state of your alarm. Each is drawn as large as the screen allows. The three buttons on the side of the watch each trigger an entity of your choice: run a script or scene, trigger an automation, press a button entity, or toggle a light or switch. A pressed button turns yellow while Home Assistant works on it, then green with a short vibration, or red with a double vibration if it failed.
+
+Values refresh every 30 seconds while the app is open, and right after a button did its work. They turn grey when they are out of date.
+
+Setup, in the app's settings in the Pebble app:
+- the address of your Home Assistant, as your phone reaches it
+- a long-lived access token (in Home Assistant: your profile, Security tab)
+- the entities to show and to trigger, with captions and labels
+- optionally, short texts for states, such as disarmed=OFF, armed_away=AWAY
+
+Your settings and token stay on your phone. The watch talks to Home Assistant only through the phone, so the address must be reachable from wherever your phone is: at home only on your own network, or anywhere through remote access.
+
+Made for the Pebble Time 2. Free software under the GPL; the source is on GitHub.
+
+Not affiliated with Home Assistant or the Open Home Foundation.

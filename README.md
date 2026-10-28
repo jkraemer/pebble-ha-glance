@@ -68,11 +68,12 @@ part of the package, token included, so keep such a build to yourself.
 
 ## Appstore
 
-The listing's images: the icons `docs/store/icon-80.png` and
-`docs/store/icon-144.png`, and as screenshots `button-succeeded`, `two-values`,
-`one-value` and `button-busy` from `docs/screens`. The icons, and the launcher
-icon `resources/images/menu_icon.png`, are drawn as SVG next to them;
-`make icons` renders them again.
+The listing's text is `docs/store/description.txt`. Its images: the icons
+`docs/store/icon-80.png` and `docs/store/icon-144.png`, and as screenshots
+`button-succeeded`, `two-values`, `one-value` and `button-busy` from
+`docs/screens`. The icons, and the launcher icon
+`resources/images/menu_icon.png`, are drawn as SVG next to them; `make icons`
+renders them again.
 
 ## Test
 
