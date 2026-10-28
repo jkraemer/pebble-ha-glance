@@ -85,6 +85,9 @@ headless Pebble Time 2 emulator against a stand-in Home Assistant
 (`tools/fake_ha.js`) and compares the screen with the pictures in
 `test/screens`.
 
+On GitHub, every push and pull request runs both and `pebble build`
+(`.github/workflows/build.yml`); the package is kept with the run.
+
 `tools/emu.sh` drives the emulator by hand: install, press buttons, send
 messages, take screenshots. It builds with `dev/settings.json`, which
 points at the stand-in, so that buttons pressed in the emulator never reach
