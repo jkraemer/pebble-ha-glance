@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 22
 
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.2
         with:
           # Only the pebble tool is installed with uv: there are no Python
           # dependencies to cache.
