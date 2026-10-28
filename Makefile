@@ -10,7 +10,7 @@ HOST_SOURCES = src/c/layout.c src/c/ink.c src/c/fit.c src/c/text.c test/c/host/p
 VENDOR_SOURCES = src/c/vendor/pebble-fctx/ffont.c src/c/vendor/pebble-utf8/pebble-utf8.c
 C_TESTS = $(patsubst test/c/test_%.c,%,$(wildcard test/c/test_*.c))
 
-.PHONY: test test-c test-js test-emulator font
+.PHONY: test test-c test-js test-emulator font icons
 
 test: test-c test-js
 
@@ -35,3 +35,9 @@ test-emulator:
 # Regenerates the vector font resource from the TrueType font.
 font:
 	uv run --with fonttools tools/make_font.py $(FONT_SOURCE) resources/fonts/text.ffont
+
+# Renders the launcher icon and the appstore icons from their drawings.
+icons:
+	magick -background none resources/images/menu_icon.svg PNG32:resources/images/menu_icon.png
+	magick -background none docs/store/icon.svg -depth 8 docs/store/icon-144.png
+	magick -background none -density 48 docs/store/icon.svg -resize 80x80 -depth 8 docs/store/icon-80.png

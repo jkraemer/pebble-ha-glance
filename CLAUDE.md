@@ -12,6 +12,7 @@ make test-emulator   # end-to-end in the headless emulator against tools/fake_ha
 pebble build         # the real build, without settings; output build/pebble-ha-glance.pbw
 tools/emu.sh         # drive the emulator: install, click, send, shot, kill
 make font            # regenerate resources/fonts/text.ffont
+make icons           # render the launcher and appstore icons from their SVGs
 ```
 
 After changing `messageKeys` or resources in `package.json`, run
